@@ -1,0 +1,35 @@
+import re
+from PIL import Image
+import numpy as np
+
+def parse_rgb_data(line):
+    """解析单行中的RGB数组序列"""
+    rgb_pattern = re.compile(r'\[(\d+),(\d+),(\d+)\]')
+    matches = rgb_pattern.findall(line)
+    return [tuple(map(int, match)) for match in matches]
+
+# 提取并处理所有有效数据行
+all_pixels = []
+with open('rgb_data.txt', 'r') as f:
+    for line in f:
+        if 'L:' not in line:  # 跳过非数据行
+            continue
+        pixel_data = parse_rgb_data(line)
+        if pixel_data:
+            all_pixels.extend(pixel_data)
+
+# 确保有有效像素数据
+if not all_pixels:
+    raise ValueError("No valid RGB data found")
+
+# 动态计算图片尺寸（近似正方形）
+total_pixels = len(all_pixels)
+width = int(total_pixels ** 0.5)
+height = (total_pixels + width - 1) // width
+
+# 创建并保存图片
+img_array = np.array(all_pixels[:width*height], dtype=np.uint8)
+img_array = img_array.reshape((height, width, 3))
+img = Image.fromarray(img_array)
+img.save('output_image.png')
+print(f"Image saved as output_image.png ({width}x{height})")
